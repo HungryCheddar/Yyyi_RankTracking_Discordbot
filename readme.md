@@ -31,8 +31,8 @@ Just run the command:
 
 ## EXTRAS
 ### Discord bot setup
-Create app @ https://discord.com/developers/applications/
-Get Token from App's Bot page
-Get Client ID from App's OAuth2 page
-Use Oauth2 URL generator to generate a URL with the correct permissions (This bot needs applications.commands)
-Use the generated URL to add the bot to your server.
+- Create app @ https://discord.com/developers/applications/
+- Get Token from App's Bot page
+- Get Client ID from App's OAuth2 page
+- Use Oauth2 URL generator to generate a URL with the correct permissions (This bot needs applications.commands)
+- Use the generated URL to add the bot to your server.
