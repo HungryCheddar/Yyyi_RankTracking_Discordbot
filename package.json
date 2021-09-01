@@ -4,6 +4,7 @@
   "description": "Gives updates on ranking progress and stuff",
   "main": "bot.js",
   "scripts": {
+    "start": "node bot.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "HungryCheddar",
