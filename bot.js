@@ -29,6 +29,7 @@ client.on('guildCreate',(guild)=>{
 });
 
 client.on('interactionCreate', commandsJs.HandleInteractions);
+client.on('error',(err)=>console.error(err));
 
 const rest = new REST({ version: '9' }).setToken(TOKEN);
 client.login(TOKEN);
