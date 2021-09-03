@@ -12,7 +12,7 @@ Clone the repository
 Install the package using
 `npm install`
 And create an `auth.json` in the repository's root folder as such:
-```
+```JSON
 {
 	"token":"${TOKEN}",
 	"client_id":"${CLIENT_ID}"
@@ -22,8 +22,20 @@ Then, replace `${TOKEN}` with your app's bot token from the discord interface ht
 
 Then, replace `${CLIENT_ID}` with your app's client id under the OAuth settings page.
 
+If you wish to allow admin controls, you may create an admin.json in the repository root folder as such:
+```JSON
+{
+	"admins_ids":[ "${ADMIN0_DISCORD_ID}"]
+}
+```
+Where `${ADMIN0_DISCORD_ID}` is replaced with the admin's user id from Discord. (right click user, click copy id).
+
+
 !!!***REMINDER***!!!
 DO ***NOT*** commit your auth.json. It contains secrets that should never be shared. Anyone with the data stored inside can effectively control your app and overwrite it with a malicious bot. 
+
+
+
 
 ## RUN
 Just run the command:
