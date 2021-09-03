@@ -1,7 +1,15 @@
 const { Routes } = require('discord-api-types/v9');
 const backend = require('./back.js');
 const server = require('./server_interface.js');
-const admins = require("./admin.json");
+const admins = (()=>{
+	try{
+	return require("./admin.json") ;
+	}catch(err)
+	{
+		console.error(`Error requiring admin.json: ${err}`);
+		return {admins_ids:[]};
+	}
+})();
 const { InteractionReplyOptions, CommandInteraction } = require('discord.js');
 
 const STRING = 3;
