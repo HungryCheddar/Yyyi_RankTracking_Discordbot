@@ -7,6 +7,31 @@ module.exports = {
 	GetDataPage:GetDataPage,
 	SetRecordServer:SetRecordServer,
 	GetRecordServer:GetRecordServer,
+	SendGetRequest:(path,data)=>
+	{
+		let options ={hostname:recordHost.hostname,port:recordHost.port,path: path,method:"GET"};
+		if(data){
+			data = JSON.stringify(data);
+			options.headers ={
+				'Content-Type':'application/json',
+				'Content-Length':data.length
+			}
+		}
+		return HttpRequest(options,data);		
+	},
+	SendPostRequest: (path,data)=>
+	{
+		let options ={hostname:recordHost.hostname,port:recordHost.port,path: path,method:"POST",};
+		if(data){
+			data = JSON.stringify(data);
+			options.headers ={
+				'Content-Type':'application/json',
+				'Content-Length':data.length
+			}
+		}
+		return HttpRequest(options,data);
+	}
+	
 };
 
 async function HttpRequest(options,postData)

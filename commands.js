@@ -13,6 +13,7 @@ const admins = (()=>{
 const { InteractionReplyOptions, CommandInteraction } = require('discord.js');
 
 const STRING = 3;
+const INTEGER = 4;
 const SUBCOMMAND_GROUP = 2;
 const SUBCOMMAND = 1;
 
@@ -45,6 +46,13 @@ async function SetRecordsSource(interaction)
 	return "Server set";
 }
 
+async function ResultString(result)
+{
+	if(result.done ===undefined)
+		console.error(`ResultString used in the wrong place, received: ${result}`);
+	return result.done?"success":"failed";
+}
+
 async function GetDataSource(interaction)
 {
 	return  server.GetDataPage().then(obj=>obj.url);
@@ -55,6 +63,31 @@ async function SetRecordsSource(interaction)
 	let port = interaction.options.getInteger("port");
 	server.SetRecordServer({hostname:host,port:port});
 	return "Server set";
+}
+async function SaveRecords(interaction)
+{
+	let path = interaction.options.getString("rel_save_path");
+	return server.SendPostRequest("/save_records",{save_path:path}).then(ResultString);
+}
+async function ClearRecords(interaction)
+{
+	return server.SendPostRequest("/clear_records").then(ResultString);
+}
+async function GetRecords(interaction)
+{
+	return server.SendGetRequest("/get_records").then(obj=>`\`\`\`json\n${JSON.stringify(obj)}\`\`\``);
+}
+async function SetRecords(interaction)
+{
+	let data = JSON.parse(interaction.options.getString("json"));
+	if(!data)
+		return "Failed. Json field is empty";
+	return server.SendPostRequest("/set_records",{data:data}).then(ResultString);
+}
+async function LoadRecords(interaction)
+{
+	let path = interaction.options.getString("rel_save_path");
+	return server.SendGetRequest("/load_records",{save_path:path}).then(ResultString);
 }
 
 function AdminOnly(callback)
@@ -104,7 +137,44 @@ let commandMap = {
 		}
 	]},
 	get_data_source: {description: "Get the target page the records server uses to pull the data from",response:AdminOnly(GetDataSource)},
-	set_records_source: {description : "Sets the records server to interface with", response:AdminOnly(SetRecordsSource)}
+	set_records_source: {description : "Sets the records server to interface with", response:AdminOnly(SetRecordsSource), options:[
+		{ 
+			name : "host",
+			description: "records source host",
+			type: STRING,
+			required:true
+		},
+		{ 
+			name : "port",
+			description: "records source host",
+			type: INTEGER,
+			required:true
+		}
+	]},
+	save_records: {description: "Saves the data as a file on the server",response:AdminOnly(SaveRecords),options:[
+		{ 
+			name : "rel_save_path",
+			description: "Filename",
+			type: STRING
+		}
+	]},
+	load_records: {description: "Loads the data from a file on the server",response:AdminOnly(LoadRecords),options:[
+		{ 
+			name : "rel_save_path",
+			description: "Filename",
+			type: STRING
+		}
+	]},
+	clear_records: {description: "Clears the records data on the server",response:AdminOnly(ClearRecords)},
+	get_records: {description: "Gets the records data on the server",response:AdminOnly(GetRecords)},
+	set_records: {description: "Sets the records data on the server",response:AdminOnly(SetRecords),options:[
+		{
+			name: "json",
+			description: "the data",
+			type: STRING,
+			required:true
+		}
+	]},
 };
 
 function Template(ResponseFunc, info_string) {
