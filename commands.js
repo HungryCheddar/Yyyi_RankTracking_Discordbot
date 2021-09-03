@@ -1,91 +1,135 @@
 const { Routes } = require('discord-api-types/v9');
 const backend = require('./back.js');
+const server = require('./server_interface.js');
+const admins = require("./admin.json");
+const { InteractionReplyOptions, CommandInteraction } = require('discord.js');
 
+const STRING = 3;
 const SUBCOMMAND_GROUP = 2;
 const SUBCOMMAND = 1;
 
+const CHANNEL_MESSAGE_WITH_SOURCE=4;
 
-async function CurrentScoreResponse(tierName)
-{
-	return backend.GetCurrentScore(tierName); 
+async function CurrentScoreResponse(tierName) {
+	return backend.GetCurrentScore(tierName);
 }
-async function ScoreHistoryResponse(tierName)
-{
+async function ScoreHistoryResponse(tierName) {
 	return backend.GetScoreHistory(tierName);
 }
 
+async function SetDataSource(interaction)
+{
+	let url = interaction.options.getString("url");
+	try{
+		let test = new URL(url);
+	}catch(error)
+	{
+		return "Invalid URL";
+	}
+	await server.SetDataPage(url);
+	return "set";
+}
+async function SetRecordsSource(interaction)
+{
+	let host = interaction.options.getString("host");
+	let port = interaction.options.getInteger("port");
+	server.SetRecordServer({hostname:host,port:port});
+	return "Server set";
+}
+
+async function GetDataSource(interaction)
+{
+	return  server.GetDataPage().then(obj=>obj.url);
+}
+async function SetRecordsSource(interaction)
+{
+	let host = interaction.options.getString("host");
+	let port = interaction.options.getInteger("port");
+	server.SetRecordServer({hostname:host,port:port});
+	return "Server set";
+}
+
+function AdminOnly(callback)
+{
+	return async (interaction)=>
+	{
+		let isAdmin = false;
+		admins.admins_ids.forEach(admin=> isAdmin = admin===interaction.user.id);
+		if(isAdmin)
+			return callback(interaction);
+		else
+			return "Not authorized";
+	};
+}
+
 let commandMap = {
-	current_score:{
+	current_score: {
 		description: "Gets current scores",
-		options: GetTiers( (tierName)=>{ 
+		options: GetTiers((tierName) => {
 			return {
-					name : tierName,
-					description : `Current score of ${tierName}`,
-					type : SUBCOMMAND,
-					response: (interaction)=>CurrentScoreResponse(tierName)
-				};
+				name: tierName,
+				description: `Current score of ${tierName}`,
+				type: SUBCOMMAND,
+				response: (interaction) => CurrentScoreResponse(tierName)
+			};
 		})
 	},
-	score_history:{
+	score_history: {
 		description: "Gets the history of scores",
-		options: GetTiers( (tierName)=>{ 
+		options: GetTiers((tierName) => {
 			return {
-					name : tierName,
-					description : `History of ${tierName}'s scores`,
-					type : SUBCOMMAND,
-					response: async (interaction)=>{ return ScoreHistoryResponse(tierName); }
-				};
+				name: tierName,
+				description: `History of ${tierName}'s scores`,
+				type: SUBCOMMAND,
+				response: async (interaction) => { return ScoreHistoryResponse(tierName); }
+			};
 		})
 	},
-	test_cmd: {description:"Test Command",response:async(interaction)=> "Test response"},
-	current_scores: Template(CurrentScoreResponse,"current scores"),
-	score_histories: Template(ScoreHistoryResponse,"score history"),
+	test_cmd: { description: "Test Command", response: async (interaction) => "Test response" },
+	current_scores: Template(CurrentScoreResponse, "current scores"),
+	score_histories: Template(ScoreHistoryResponse, "score history"),
+	set_data_source: {description: "Tells records server to change the target page to pulldata from",response:AdminOnly(SetDataSource),options:[
+		{ 
+			name : "url",
+			description: "url of the page to pull the data from",
+			type: STRING
+		}
+	]},
+	get_data_source: {description: "Get the target page the records server uses to pull the data from",response:AdminOnly(GetDataSource)},
+	set_records_source: {description : "Sets the records server to interface with", response:AdminOnly(SetRecordsSource)}
 };
 
-function Template(ResponseFunc, info_string)
-{
+function Template(ResponseFunc, info_string) {
 	return {
-		description:`Get ${info_string} for all tiers`,
-		response: async (interaction)=>{
-			let promises = [];
-			promises = GetTiers(ResponseFunc);
-			let result = `All results[${promises.length}]:`;
-			return Promise.all(promises).then(results=>{
-				results.forEach(r => {
-					result+=`\n ${r}`;
-				});
-				return result;
-			});
+		description: `Get ${info_string} for all tiers`,
+		response: async (interaction) => {
+			return ResponseFunc();
 		}
 	}
 }
 
 //PUBLIC
-module.exports=
+module.exports =
 {
-	GetTiers:GetTiers,
-	GetCommandList:GetCommandList,
-	HandleInteractions:HandleInteractions,
-	RegisterCommands:RegisterCommands,
-	Init:Init
+	GetTiers: GetTiers,
+	GetCommandList: GetCommandList,
+	HandleInteractions: HandleInteractions,
+	RegisterCommands: RegisterCommands,
+	Init: Init
 };
 
- function GetTiers(func)
-{
+function GetTiers(func) {
 	let result = [];
-	backend.tierList.forEach(tierName=>{result.push(func(tierName))});
+	backend.tierList.forEach(tierName => { result.push(func(tierName)) });
 	return result;
 }
 
- function GetCommandList()
-{
+function GetCommandList() {
 	let commandList = [];
-	for(let cmdKey in commandMap)
-	{
-		let cmd = {name : cmdKey};
-		let cmdTemp =commandMap[cmdKey];
-		for(let k in cmdTemp)
-		{
+	for (let cmdKey in commandMap) {
+		let cmd = { name: cmdKey };
+		let cmdTemp = commandMap[cmdKey];
+		for (let k in cmdTemp) {
 			cmd[k] = cmdTemp[k];
 		}
 		commandList.push(cmd);
@@ -94,53 +138,53 @@ module.exports=
 }
 
 
-async function RegisterCommands(rest,commands, guild_id, client_id)
-{
+async function RegisterCommands(rest, commands, guild_id, client_id) {
 	try {
-	  console.log('Started refreshing application (/) commands.');
-  
-	  await rest.put(
-		Routes.applicationGuildCommands(client_id,guild_id),
-		{ body: commands },
-	  );
-	  console.log('Successfully reloaded application (/) commands.');
+		console.log('Started refreshing application (/) commands.');
+
+		await rest.put(
+			Routes.applicationGuildCommands(client_id, guild_id),
+			{ body: commands },
+		);
+		console.log('Successfully reloaded application (/) commands.');
 	} catch (error) {
-	  console.error(error);
+		console.error(error);
 	}
 }
 
-function findOption(cmd,iOptions)
-{
-	if(cmd.response)
+function findOption(cmd, iOptions) {
+	if (cmd.response)
 		return cmd;
 	let subcommandName = iOptions.getSubcommand();
 	let options = cmd.options;
 	let result = null;
-	options.forEach( option => { 
-		if(subcommandName===option.name)
-		result = option;
+	options.forEach(option => {
+		if (subcommandName === option.name)
+			result = option;
 	});
 	return result;
 }
 
 
-async function HandleInteractions(interaction)
-{
+async function HandleInteractions(interaction) {
 	if (!interaction.isCommand()) return;
 
 	// Our bot needs to know if it will execute a command
-    // It will listen for messages that will start with `!`
-    
-		let option = findOption(commandMap[interaction.commandName],interaction.options);
-		if(option)
-			option.response(interaction).then(async (response)=>{ 
-				await interaction.reply(response);
-			});
+	// It will listen for messages that will start with `!`
+	try {
+		let option = findOption(commandMap[interaction.commandName], interaction.options);
+		if (option)
+			option.response(interaction).then(async (response) => {
+				return interaction.reply({type: 4, content:response,ephemeral:true});
+			}).catch((err)=>console.error(err));
 		else
-			interaction.reply("Invalid command");
-  
+			interaction.reply("Invalid command").catch((err)=>console.error(err));
+			
+	} catch (err) {
+		console.error(err);
+	}
+
 }
 
-function Init(client)
-{
+function Init(client) {
 }
