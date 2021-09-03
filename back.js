@@ -16,6 +16,11 @@ const tierList = (()=>{
 	return result;
 })();
 
+function formatNumber(num)
+{
+	return num.toLocaleString();
+}
+
 function TierToIndex(tier)
 {
 	let result = undefined;
@@ -39,8 +44,24 @@ function GetTierScoreHistoryString(recordsTable,tier)
 {
 	let history = GetTierScoreHistory(recordsTable,tier);
 	let result = "";
+	let max_len =0;
+	let prev =undefined;
 	history.forEach((elem)=>{
-		result += `${elem.points} [${elem.time}]\n`;
+		if(prev)
+			max_len = Math.max(max_len,`${formatNumber(elem.points-prev.points)}`.length);
+		prev = elem;
+	});
+	prev =undefined;
+	history.forEach((elem)=>{
+		let diff = "";
+		if(prev)
+			diff = `${formatNumber(elem.points-prev.points)}`;
+		while(diff.length<max_len)
+		{
+			diff = ' '+diff;
+		}
+		result= `${formatNumber(elem.points)} (+${diff}) [${elem.time}]\n${result}`;
+		prev = elem;
 	});
 	return result;
 }
@@ -59,7 +80,7 @@ async function GetCurrentScore(tier,recordsTable)
 	}
 	if(!tierMap[tier])
 		throw `invalid tier.`;
-	return `Rank Tier[${tier}] (${tierMap[tier]}): ${GetLatestTierScore(recordsTable,tier)}`;
+	return `Rank Tier[${tier}] (${tierMap[tier]}): ${formatNumber(GetLatestTierScore(recordsTable,tier))}`;
 }
 async function GetScoreHistory(tier,recordsTable)
 {
