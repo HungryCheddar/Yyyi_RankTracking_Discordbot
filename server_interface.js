@@ -1,5 +1,6 @@
 let http = require("http");
 
+let verbose = false;
 
 module.exports = {
 	GetRecords:GetRecords,
@@ -47,7 +48,8 @@ async function HttpRequest(options,postData)
 			res.on("error",reject);		
 			//Schedule a callback for when we have received all the data in result_str
 			res.on('end', () => {
-				console.log("Received Data: "+result_str);
+				if(verbose)
+					console.log("Received Data: "+result_str);
 				let result = {};
 				try{
 					result = JSON.parse(result_str);
@@ -80,7 +82,8 @@ async function PostHttpRequest(options,postData)
 			res.on("error",reject);		
 			//Schedule a callback for when we have received all the data in result_str
 			res.on('end', () => {
-				console.log("Received Data: "+result_str);
+				if(verbose)
+					console.log("Received Data: "+result_str);
 				let result = {};
 				try{
 					result = JSON.parse(result_str);
